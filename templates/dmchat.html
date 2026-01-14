@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DM Chat</title>
+</head>
+<body>
+    <h2>Direct Message</h2>
+
+    {% if not target %}
+        <p>Select user from search</p>
+    {% else %}
+        <h3>Chat with {{ target }}</h3>
+
+        <div style="border:1px solid black; padding:10px; height:200px; overflow:auto;">
+            {% for m in messages %}
+                <p><b>{{ m[0] }}</b>: {{ m[1] }} <small>({{ m[2] }})</small></p>
+            {% endfor %}
+        </div>
+
+        <form method="POST">
+            <input type="text" name="message" placeholder="Type message" required>
+            <button type="submit">Send</button>
+        </form>
+    {% endif %}
+
+    <p><a href="/home">Back</a></p>
+</body>
+</html>

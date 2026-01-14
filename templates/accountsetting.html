@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Settings</title>
+</head>
+<body>
+    <h2>Account Settings</h2>
+
+    <p>Username: {{ session['user'] }}</p>
+    <p>Role: {{ session['role'] }}</p>
+
+    <p><a href="/home">Back</a></p>
+    <p><a href="/logout">Logout</a></p>
+</body>
+</html>
