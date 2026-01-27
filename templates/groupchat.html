@@ -3,17 +3,134 @@
 <head>
     <title>Group Chat</title>
     <meta http-equiv="refresh" content="600">
-    <link rel="stylesheet" href="/static/style.css">
 
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .chat-card {
+            background: white;
+            width: 520px;
+            height: 620px;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-card h2 {
+            text-align: center;
+            color: #102a6b;
+            margin-bottom: 15px;
+        }
+
+        .chat-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: #f8f9fc;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .message b {
+            color: #102a6b;
+        }
+
+        .message small {
+            color: #666;
+            font-size: 11px;
+            margin-left: 6px;
+        }
+
+        .delete-form {
+            display: inline;
+            float: right;
+        }
+
+        .delete-form button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chat-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .chat-form input:focus {
+            outline: none;
+            border-color: #102a6b;
+        }
+
+        .chat-form button {
+            padding: 12px 18px;
+            background: #102a6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .chat-form button:hover {
+            background: #081c47;
+        }
+
+        .back-link {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        .back-link a {
+            color: #c62828;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="page-container">
+
+    <div class="chat-card">
 
         <h2>Group Chat</h2>
 
         <div class="chat-box">
             {% for m in messages %}
-                <p class="message">
+                <div class="message">
                     <b>{{ m[1] }}</b>: {{ m[2] }}
                     <small>({{ m[3] }})</small>
 
@@ -24,7 +141,7 @@
                             <button type="submit" title="Delete">🗑️</button>
                         </form>
                     {% endif %}
-                </p>
+                </div>
             {% endfor %}
         </div>
 
@@ -33,9 +150,11 @@
             <button type="submit">Send</button>
         </form>
 
-        <a class="back-link" href="/home">Back</a>
+        <div class="back-link">
+            <a href="/home">← Back</a>
+        </div>
 
     </div>
-</body>
 
+</body>
 </html>

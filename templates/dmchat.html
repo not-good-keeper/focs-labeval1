@@ -3,44 +3,181 @@
 <head>
     <title>DM Chat</title>
     <meta http-equiv="refresh" content="600">
-    <link rel="stylesheet" href="/static/style.css">
 
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .dm-card {
+            background: white;
+            width: 520px;
+            height: 620px;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dm-card h2 {
+            text-align: center;
+            color: #102a6b;
+            margin-bottom: 10px;
+        }
+
+        .dm-card h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 15px;
+        }
+
+        .info {
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        .dm-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            background: #f8f9fc;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .message b {
+            color: #102a6b;
+        }
+
+        .message small {
+            color: #666;
+            font-size: 11px;
+            margin-left: 6px;
+        }
+
+        .delete-form {
+            display: inline;
+            float: right;
+        }
+
+        .delete-form button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #c62828;
+        }
+
+        .dm-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .dm-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .dm-form input:focus {
+            outline: none;
+            border-color: #102a6b;
+        }
+
+        .dm-form button {
+            padding: 12px 18px;
+            background: #102a6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .dm-form button:hover {
+            background: #081c47;
+        }
+
+        .back-link {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        .back-link a {
+            color: #c62828;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
-    <h2>Direct Message</h2>
 
-    {% if not target %}
-        <p>Select user from search</p>
-    {% else %}
-        <h3>Chat with {{ target }}</h3>
+    <div class="dm-card">
 
-        <div style="border:1px solid black; padding:10px; height:200px; overflow:auto;">
-            {% for m in messages %}
-                <p>
-                    <b>{{ m[1] }}</b>: {{ m[2] }}
-                    <small>({{ m[3] }})</small>
+        <h2>Direct Message</h2>
 
-                    {% if session.role == "admin" %}
-                        <form method="POST"
-                              action="/delete_message/{{ m[0] }}"
-                              style="display:inline;">
-                            <button type="submit"
-                                    title="Delete message"
-                                    style="border:none; background:none; color:red; cursor:pointer;">
-                                🗑️
-                            </button>
-                        </form>
-                    {% endif %}
-                </p>
-            {% endfor %}
+        {% if not target %}
+            <div class="info">
+                Select a user from <b>Search Users</b> to start chatting.
+            </div>
+        {% else %}
+            <h3>Chat with {{ target }}</h3>
+
+            <div class="dm-box">
+                {% for m in messages %}
+                    <div class="message">
+                        <b>{{ m[1] }}</b>: {{ m[2] }}
+                        <small>({{ m[3] }})</small>
+
+                        {% if session.role == "admin" %}
+                            <form method="POST"
+                                  action="/delete_message/{{ m[0] }}"
+                                  class="delete-form">
+                                <button type="submit" title="Delete">🗑️</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" class="dm-form">
+                <input type="text" name="message" placeholder="Type message" required>
+                <button type="submit">Send</button>
+            </form>
+        {% endif %}
+
+        <div class="back-link">
+            <a href="/home">← Back</a>
         </div>
 
-        <form method="POST">
-            <input type="text" name="message" placeholder="Type message" required>
-            <button type="submit">Send</button>
-        </form>
-    {% endif %}
+    </div>
 
-    <p><a href="/home">Back</a></p>
 </body>
 </html>

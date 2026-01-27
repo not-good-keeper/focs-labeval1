@@ -2,19 +2,92 @@
 <html>
 <head>
     <title>Signup</title>
-    <link rel="stylesheet" href="/static/style.css">
 
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .signup-card {
+            background: #ffffff;
+            width: 360px;
+            padding: 35px 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .signup-card h2 {
+            margin-bottom: 25px;
+            color: #102a6b;
+        }
+
+        .signup-card input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .signup-card input:focus {
+            outline: none;
+            border-color: #102a6b;
+        }
+
+        .signup-card button {
+            width: 100%;
+            padding: 12px;
+            background: #102a6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .signup-card button:hover {
+            background: #081c47;
+        }
+
+        .signup-card p {
+            margin-top: 18px;
+            font-size: 14px;
+        }
+
+        .signup-card a {
+            color: #102a6b;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .signup-card a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
-    <h2>User Signup</h2>
 
-    <form method="POST" action="/signup">
-        <input type="text" name="username" placeholder="Username" required><br><br>
-        <input type="password" name="password" placeholder="Password" required><br><br>
+    <div class="signup-card">
+        <h2>User Signup</h2>
 
-        <button type="submit">Create Account</button>
-    </form>
+        <form method="POST" action="/signup">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
 
-    <p><a href="/">Back to login</a></p>
+            <button type="submit">Create Account</button>
+        </form>
+
+        <p><a href="/">← Back to login</a></p>
+    </div>
+
 </body>
 </html>

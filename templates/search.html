@@ -1,16 +1,118 @@
-<h2>Search Users</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Users</title>
 
-<form>
-    <input name="query" placeholder="Username">
-    <button>Search</button>
-    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-</form>
+        .search-card {
+            background: white;
+            width: 420px;
+            padding: 35px 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
 
-<ul>
-{% for u in users %}
-    <li><a href="/dmchat?user={{ u[0] }}">{{ u[0] }}</a></li>
-{% endfor %}
-</ul>
+        .search-card h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #102a6b;
+        }
 
-<p><a href="/home">Back</a></p>
+        .search-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: #102a6b;
+        }
+
+        .search-form button {
+            padding: 12px 18px;
+            background: #102a6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .search-form button:hover {
+            background: #081c47;
+        }
+
+        .results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .results li {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #f5f6fa;
+        }
+
+        .results a {
+            color: #102a6b;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .results a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 18px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="search-card">
+        <h2>Search Users</h2>
+
+        <form class="search-form" method="GET">
+            <input name="query" placeholder="Username">
+            <button type="submit">Search</button>
+        </form>
+
+        <ul class="results">
+            {% for u in users %}
+                <li>
+                    <a href="/dmchat?user={{ u[0] }}">{{ u[0] }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <a class="back-link" href="/home">← Back</a>
+    </div>
+
+</body>
+</html>
