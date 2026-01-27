@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>DM Chat</title>
+    <meta http-equiv="refresh" content="600">
+    <link rel="stylesheet" href="/static/style.css">
+
 </head>
 <body>
     <h2>Direct Message</h2>
@@ -13,7 +16,22 @@
 
         <div style="border:1px solid black; padding:10px; height:200px; overflow:auto;">
             {% for m in messages %}
-                <p><b>{{ m[0] }}</b>: {{ m[1] }} <small>({{ m[2] }})</small></p>
+                <p>
+                    <b>{{ m[1] }}</b>: {{ m[2] }}
+                    <small>({{ m[3] }})</small>
+
+                    {% if session.role == "admin" %}
+                        <form method="POST"
+                              action="/delete_message/{{ m[0] }}"
+                              style="display:inline;">
+                            <button type="submit"
+                                    title="Delete message"
+                                    style="border:none; background:none; color:red; cursor:pointer;">
+                                🗑️
+                            </button>
+                        </form>
+                    {% endif %}
+                </p>
             {% endfor %}
         </div>
 

@@ -2,21 +2,40 @@
 <html>
 <head>
     <title>Group Chat</title>
+    <meta http-equiv="refresh" content="600">
+    <link rel="stylesheet" href="/static/style.css">
+
 </head>
 <body>
-    <h2>Group Chat</h2>
+    <div class="page-container">
 
-    <div style="border:1px solid black; padding:10px; height:200px; overflow:auto;">
-        {% for m in messages %}
-            <p><b>{{ m[0] }}</b>: {{ m[1] }} <small>({{ m[2] }})</small></p>
-        {% endfor %}
+        <h2>Group Chat</h2>
+
+        <div class="chat-box">
+            {% for m in messages %}
+                <p class="message">
+                    <b>{{ m[1] }}</b>: {{ m[2] }}
+                    <small>({{ m[3] }})</small>
+
+                    {% if session.role == "admin" %}
+                        <form method="POST"
+                              action="/delete_message/{{ m[0] }}"
+                              class="delete-form">
+                            <button type="submit" title="Delete">🗑️</button>
+                        </form>
+                    {% endif %}
+                </p>
+            {% endfor %}
+        </div>
+
+        <form method="POST" class="chat-form">
+            <input type="text" name="message" placeholder="Type message" required>
+            <button type="submit">Send</button>
+        </form>
+
+        <a class="back-link" href="/home">Back</a>
+
     </div>
-
-    <form method="POST">
-        <input type="text" name="message" placeholder="Type message" required>
-        <button type="submit">Send</button>
-    </form>
-
-    <p><a href="/home">Back</a></p>
 </body>
+
 </html>

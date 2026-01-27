@@ -6,6 +6,7 @@ import time
 import base64
 import hmac
 from cryptography.fernet import Fernet
+import os
 
 # ---------------- APP SETUP ----------------
 app = Flask(__name__)
@@ -26,8 +27,15 @@ def hash_password(password, salt):
     return hashlib.sha256((password + salt).encode()).hexdigest()
 
 # ---------------- ENCRYPTION + INTEGRITY ----------------
-FERNET_KEY = Fernet.generate_key()
+
+KEY_FILE = "fernet.key"
+if not os.path.exists(KEY_FILE):
+    with open(KEY_FILE, "wb") as f:
+        f.write(Fernet.generate_key())
+with open(KEY_FILE, "rb") as f:
+    FERNET_KEY = f.read()
 cipher = Fernet(FERNET_KEY)
+
 INTEGRITY_KEY = b"lab-integrity-key"
 
 def encrypt_message(plain_text):
@@ -40,6 +48,9 @@ def decrypt_message(encoded_text):
 
 def generate_hmac(message):
     return hmac.new(INTEGRITY_KEY, message.encode(), hashlib.sha256).hexdigest()
+def verify_hmac(message, signature):
+    expected = generate_hmac(message)
+    return hmac.compare_digest(expected, signature)
 
 # ---------------- DATABASE ----------------
 def get_db():
@@ -171,14 +182,28 @@ def dmchat():
             (session["user"], room, encrypted, signature)
         )
         conn.commit()
+        conn.close()
+        return redirect(f"/dmchat?user={target}")
+
 
     cur.execute(
-        "SELECT sender, message, signature, timestamp FROM messages WHERE room=? ORDER BY timestamp",
+        "SELECT id, sender, message, signature, timestamp FROM messages WHERE room=? ORDER BY timestamp",
         (room,)
     )
 
     rows = cur.fetchall()
-    messages = [(s, decrypt_message(m), t) for s, m, _, t in rows]
+    messages = []
+
+    for msg_id, sender, enc_msg, sig, ts in rows:
+        try:
+            plain = decrypt_message(enc_msg)
+            if verify_hmac(plain, sig):
+                messages.append((msg_id, sender, plain, ts))
+            else:
+                messages.append((msg_id, sender, "[Integrity check failed]", ts))
+        except Exception:
+            messages.append((msg_id, sender, "[Corrupted message]", ts))
+
 
     conn.close()
     return render_template("dmchat.html", messages=messages, target=target)
@@ -205,13 +230,29 @@ def groupchat():
             (session["user"], "group", encrypted, signature)
         )
         conn.commit()
+        conn.close()
+        return redirect("/groupchat")
+
 
     cur.execute(
-        "SELECT sender, message, signature, timestamp FROM messages WHERE room='group' ORDER BY timestamp"
-    )
+    "SELECT id, sender, message, signature, timestamp FROM messages WHERE room='group' ORDER BY timestamp"
+)
 
     rows = cur.fetchall()
-    messages = [(s, decrypt_message(m), t) for s, m, _, t in rows]
+
+    messages = []
+
+    for msg_id, sender, enc_msg, sig, ts in rows:
+        try:
+            plain = decrypt_message(enc_msg)
+            if verify_hmac(plain, sig):
+                messages.append((msg_id, sender, plain, ts))
+            else:
+                messages.append((msg_id, sender, "[Integrity check failed]", ts))
+        except Exception:
+            messages.append((msg_id, sender, "[Corrupted message]", ts))
+
+
 
     conn.close()
     return render_template("groupchat.html", messages=messages)
@@ -251,7 +292,9 @@ def logout():
     return redirect("/")
 
 # ---------------- DELETE (ADMIN ONLY) ----------------
-@app.route("/delete_message/<int:msg_id>")
+from flask import request, redirect
+
+@app.route("/delete_message/<int:msg_id>", methods=["POST"])
 def delete_message(msg_id):
     if not check_access("delete"):
         return "Access Denied"
@@ -262,7 +305,9 @@ def delete_message(msg_id):
     conn.commit()
     conn.close()
 
-    return redirect("/groupchat")
+    return redirect(request.referrer or "/groupchat")
+
+
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
