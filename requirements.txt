@@ -1,0 +1,6 @@
+Flask>=2.0
+cryptography
+flask-socketio
+python-socketio
+eventlet
+pyotp

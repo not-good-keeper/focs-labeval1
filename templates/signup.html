@@ -1,83 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Signup</title>
-
+    <title>Create account — Secure Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .signup-card {
-            background: #ffffff;
-            width: 360px;
-            padding: 35px 40px;
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
-
-        .signup-card h2 {
-            margin-bottom: 25px;
-            color: #102a6b;
-        }
-
-        .signup-card input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .signup-card input:focus {
-            outline: none;
-            border-color: #102a6b;
-        }
-
-        .signup-card button {
-            width: 100%;
-            padding: 12px;
-            background: #102a6b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .signup-card button:hover {
-            background: #081c47;
-        }
-
-        .signup-card p {
-            margin-top: 18px;
-            font-size: 14px;
-        }
-
-        .signup-card a {
-            color: #102a6b;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .signup-card a:hover {
-            text-decoration: underline;
-        }
+        :root{--bg:#0f1724;--accent:#5865F2;--muted:#93a2b8}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;display:flex;align-items:center;justify-content:center}
+        .signup-card{width:380px;padding:36px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7);}
+        h2{color:var(--accent);margin-bottom:12px}
+        input{width:100%;padding:12px;margin-bottom:12px;border-radius:8px;background:#071020;border:1px solid rgba(255,255,255,0.03);color:#e6eef8}
+        button{width:100%;padding:12px;border-radius:10px;background:var(--accent);color:white;border:none;font-weight:600;cursor:pointer}
+        .logo{font-weight:800;color:white;font-size:18px;margin-bottom:6px}
     </style>
 </head>
 
 <body>
 
     <div class="signup-card">
-        <h2>User Signup</h2>
+        <div class="logo">Secure Chat</div>
+        <h2>Create your account</h2>
 
         <form method="POST" action="/signup">
             <input type="text" name="username" placeholder="Username" required>
@@ -86,7 +27,7 @@
             <button type="submit">Create Account</button>
         </form>
 
-        <p><a href="/">← Back to login</a></p>
+        <div class="mt-3" style="text-align:center;color:var(--muted)"><a href="/">← Back to login</a></div>
     </div>
 
 </body>

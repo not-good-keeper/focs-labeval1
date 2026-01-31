@@ -1,95 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Search Users</title>
-
+    <title>Search Users — Secure Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .search-card {
-            background: white;
-            width: 420px;
-            padding: 35px 40px;
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .search-card h2 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: #102a6b;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .search-form input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .search-form input:focus {
-            outline: none;
-            border-color: #102a6b;
-        }
-
-        .search-form button {
-            padding: 12px 18px;
-            background: #102a6b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .search-form button:hover {
-            background: #081c47;
-        }
-
-        .results {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .results li {
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: #f5f6fa;
-        }
-
-        .results a {
-            color: #102a6b;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .results a:hover {
-            text-decoration: underline;
-        }
-
-        .back-link {
-            display: block;
-            margin-top: 18px;
-            text-align: center;
-            font-size: 14px;
-        }
+        :root{--bg:#0f1724;--panel:#0b1220;--accent:#5865F2;--muted:#93a2b8}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;display:flex;align-items:center;justify-content:center}
+        .search-card{width:520px;padding:28px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7)}
+        h2{color:var(--accent);margin-bottom:12px}
+        .search-form{display:flex;gap:8px;margin-bottom:18px}
+        input{flex:1;padding:12px;border-radius:8px;background:#071022;border:1px solid rgba(255,255,255,0.03);color:#e6eef8}
+        .results li{padding:10px;border-radius:8px;background:#071022;margin-bottom:8px}
+        .results a{color:#9fb3ff;text-decoration:none}
     </style>
 </head>
 

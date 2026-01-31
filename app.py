@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
 import secrets
 import hashlib
@@ -6,11 +6,16 @@ import time
 import base64
 import hmac
 from cryptography.fernet import Fernet
+import pyotp
 import os
+from flask_socketio import SocketIO, join_room, leave_room, emit
 
 # ---------------- APP SETUP ----------------
 app = Flask(__name__)
-app.secret_key = "lab-secret-key"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "lab-secret-key")
+
+# Socket.IO (real-time)
+socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
 
 # ---------------- ACCESS CONTROL LIST ----------------
 ACL = {
@@ -23,8 +28,26 @@ def check_access(action):
     return role and action in ACL.get(role, [])
 
 # ---------------- PASSWORD HASHING ----------------
-def hash_password(password, salt):
-    return hashlib.sha256((password + salt).encode()).hexdigest()
+def hash_password(password, salt, iterations=260000):
+    # PBKDF2-HMAC-SHA256 with configurable iterations. Store as: pbkdf2$<iters>$<hex>
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), iterations)
+    return f"pbkdf2${iterations}${dk.hex()}"
+
+
+def verify_password(password, stored_hash, salt):
+    # Support new pbkdf2 format and legacy sha256(password+salt)
+    if stored_hash and stored_hash.startswith('pbkdf2$'):
+        try:
+            parts = stored_hash.split('$')
+            iterations = int(parts[1])
+            expected = parts[2]
+            dk = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), iterations)
+            return hmac.compare_digest(dk.hex(), expected)
+        except Exception:
+            return False
+    else:
+        # legacy fallback
+        return hashlib.sha256((password + salt).encode()).hexdigest() == stored_hash
 
 # ---------------- ENCRYPTION + INTEGRITY ----------------
 
@@ -36,7 +59,19 @@ with open(KEY_FILE, "rb") as f:
     FERNET_KEY = f.read()
 cipher = Fernet(FERNET_KEY)
 
-INTEGRITY_KEY = b"lab-integrity-key"
+# Integrity key: always load from file for consistency (prevents key rotation issues)
+INTEGRITY_FILE = "integrity.key"
+if not os.path.exists(INTEGRITY_FILE):
+    # Create key file on first run
+    with open(INTEGRITY_FILE, "wb") as f:
+        f.write(secrets.token_bytes(32))
+
+with open(INTEGRITY_FILE, "rb") as f:
+    INTEGRITY_KEY = f.read()
+    
+# Verify key is 32 bytes
+if len(INTEGRITY_KEY) != 32:
+    raise ValueError("Integrity key must be 32 bytes. File may be corrupted. Delete integrity.key and restart.")
 
 def encrypt_message(plain_text):
     encrypted = cipher.encrypt(plain_text.encode())
@@ -54,7 +89,43 @@ def verify_hmac(message, signature):
 
 # ---------------- DATABASE ----------------
 def get_db():
-    return sqlite3.connect("database.db")
+    conn = sqlite3.connect("database.db", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def fetch_messages(room):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, sender, message, signature, timestamp FROM messages WHERE room=? ORDER BY timestamp",
+        (room,)
+    )
+    rows = cur.fetchall()
+    messages = []
+    for row in rows:
+        msg_id = row["id"]
+        sender = row["sender"]
+        enc_msg = row["message"]
+        sig = row["signature"] if "signature" in row.keys() else None
+        ts = row["timestamp"]
+        try:
+            plain = decrypt_message(enc_msg)
+            # If no signature (old messages), just display. Otherwise verify integrity.
+            if sig:
+                if verify_hmac(plain, sig):
+                    body = plain
+                else:
+                    body = "[Integrity check failed]"
+            else:
+                body = plain
+        except Exception as e:
+            body = "[Corrupted message]"
+
+        messages.append({"id": msg_id, "sender": sender, "message": body, "timestamp": ts})
+
+    conn.close()
+    return messages
 
 # ---------------- ROUTES ----------------
 @app.route("/")
@@ -106,7 +177,7 @@ def login():
         return "Invalid username or password"
 
     stored_hash, salt, role = user
-    if hash_password(password, salt) != stored_hash:
+    if not verify_password(password, stored_hash, salt):
         return "Invalid username or password"
 
     session.clear()
@@ -138,13 +209,20 @@ def otp():
 
         return "Invalid OTP"
 
-    return """
-    <h3>Enter OTP</h3>
-    <form method="POST">
-        <input name="otp" required>
-        <button>Verify</button>
-    </form>
-    """
+    # render a nicer OTP page
+    return render_template('otp.html', ttl=60)
+
+
+@app.route('/otp/resend', methods=['POST'])
+def otp_resend():
+    # rate limit: allow resend every 20 seconds
+    if 'otp_time' in session and time.time() - session['otp_time'] < 20:
+        return {"error": "Please wait before resending"}, 429
+
+    session['otp'] = secrets.randbelow(1000000)
+    session['otp_time'] = time.time()
+    print("OTP (resend, for demo):", session['otp'])
+    return {"ok": True}
 
 # ---------------- HOME ----------------
 @app.route("/home")
@@ -154,7 +232,7 @@ def home():
     return render_template("homepage.html")
 
 # ---------------- DM CHAT ----------------
-@app.route("/dmchat", methods=["GET", "POST"])
+@app.route("/dmchat", methods=["GET"])
 def dmchat():
     if "user" not in session or not session.get("mfa"):
         return redirect("/")
@@ -166,96 +244,51 @@ def dmchat():
     users = sorted([session["user"], target])
     room = "|".join(users)
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    if request.method == "POST":
-        if not check_access("send"):
-            return "Access Denied"
-
-        plain = request.form["message"]
-        encrypted = encrypt_message(plain)
-        signature = generate_hmac(plain)
-
-        cur.execute(
-            "INSERT INTO messages (sender, room, message, signature) VALUES (?, ?, ?, ?)",
-            (session["user"], room, encrypted, signature)
-        )
-        conn.commit()
-        conn.close()
-        return redirect(f"/dmchat?user={target}")
-
-
-    cur.execute(
-        "SELECT id, sender, message, signature, timestamp FROM messages WHERE room=? ORDER BY timestamp",
-        (room,)
-    )
-
-    rows = cur.fetchall()
-    messages = []
-
-    for msg_id, sender, enc_msg, sig, ts in rows:
-        try:
-            plain = decrypt_message(enc_msg)
-            if verify_hmac(plain, sig):
-                messages.append((msg_id, sender, plain, ts))
-            else:
-                messages.append((msg_id, sender, "[Integrity check failed]", ts))
-        except Exception:
-            messages.append((msg_id, sender, "[Corrupted message]", ts))
-
-
-    conn.close()
+    messages = fetch_messages(room)
     return render_template("dmchat.html", messages=messages, target=target)
 
 # ---------------- GROUP CHAT ----------------
-@app.route("/groupchat", methods=["GET", "POST"])
+@app.route("/groupchat", methods=["GET"])
 def groupchat():
     if "user" not in session or not session.get("mfa"):
         return redirect("/")
 
+    messages = fetch_messages("group")
+    return render_template("groupchat.html", messages=messages)
+
+# ---------------- GET DM LIST ----------------
+@app.route("/api/dms")
+def get_dms():
+    if "user" not in session or not session.get("mfa"):
+        return {"error": "Unauthorized"}, 401
+    
     conn = get_db()
     cur = conn.cursor()
-
-    if request.method == "POST":
-        if not check_access("send"):
-            return "Access Denied"
-
-        plain = request.form["message"]
-        encrypted = encrypt_message(plain)
-        signature = generate_hmac(plain)
-
-        cur.execute(
-            "INSERT INTO messages (sender, room, message, signature) VALUES (?, ?, ?, ?)",
-            (session["user"], "group", encrypted, signature)
-        )
-        conn.commit()
-        conn.close()
-        return redirect("/groupchat")
-
-
-    cur.execute(
-    "SELECT id, sender, message, signature, timestamp FROM messages WHERE room='group' ORDER BY timestamp"
-)
-
+    current_user = session['user']
+    
+    # Get all DM conversations for this user by parsing room field
+    cur.execute("SELECT DISTINCT room FROM messages WHERE room LIKE ?", (f"%|%",))
     rows = cur.fetchall()
-
-    messages = []
-
-    for msg_id, sender, enc_msg, sig, ts in rows:
-        try:
-            plain = decrypt_message(enc_msg)
-            if verify_hmac(plain, sig):
-                messages.append((msg_id, sender, plain, ts))
-            else:
-                messages.append((msg_id, sender, "[Integrity check failed]", ts))
-        except Exception:
-            messages.append((msg_id, sender, "[Corrupted message]", ts))
-
-
-
+    
+    users = set()
+    for row in rows:
+        room = row[0]
+        parts = room.split("|")
+        if len(parts) == 2:
+            user1, user2 = parts[0], parts[1]
+            # Add the other user if this room contains current user
+            if user1 == current_user:
+                users.add(user2)
+            elif user2 == current_user:
+                users.add(user1)
+    
     conn.close()
-    return render_template("groupchat.html", messages=messages)
+    
+    # Convert set to sorted list
+    users = sorted(list(users))
+    
+    return {"users": users}
+
 
 # ---------------- SEARCH ----------------
 @app.route("/search")
@@ -305,10 +338,73 @@ def delete_message(msg_id):
     conn.commit()
     conn.close()
 
+    # notify clients
+    socketio.emit("message_deleted", {"id": msg_id}, broadcast=True)
     return redirect(request.referrer or "/groupchat")
 
+
+# ---------------- Socket.IO events ----------------
+@socketio.on("join")
+def handle_join(data):
+    room = data.get("room")
+    if not room:
+        return
+    join_room(room)
+    # send existing messages
+    msgs = fetch_messages(room)
+    emit("room_messages", {"messages": msgs})
+
+
+@socketio.on("send_message")
+def handle_send_message(data):
+    if "user" not in session or not session.get("mfa"):
+        emit("error", {"error": "Not authenticated"})
+        return
+
+    if not check_access("send"):
+        emit("error", {"error": "Access Denied"})
+        return
+
+    room = data.get("room")
+    plain = data.get("message", "").strip()
+    if not room or not plain:
+        return
+
+    encrypted = encrypt_message(plain)
+    signature = generate_hmac(plain)
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO messages (sender, room, message, signature) VALUES (?, ?, ?, ?)",
+        (session["user"], room, encrypted, signature)
+    )
+    conn.commit()
+    msg_id = cur.lastrowid
+    conn.close()
+
+    msg = {"id": msg_id, "sender": session["user"], "message": plain, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")}
+    emit("new_message", msg, room=room)
+
+
+@socketio.on("delete_message")
+def handle_delete_message(data):
+    msg_id = data.get("id")
+    if not msg_id:
+        return
+    if not check_access("delete"):
+        emit("error", {"error": "Access Denied"})
+        return
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM messages WHERE id=?", (msg_id,))
+    conn.commit()
+    conn.close()
+
+    emit("message_deleted", {"id": msg_id}, broadcast=True)
 
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, threaded=True)
+    socketio.run(app, host="0.0.0.0", port=5000)

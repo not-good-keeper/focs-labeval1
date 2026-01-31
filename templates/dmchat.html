@@ -1,183 +1,163 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DM Chat</title>
+    <title>Direct Messages — Secure Chat</title>
     <meta http-equiv="refresh" content="600">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .dm-card {
-            background: white;
-            width: 520px;
-            height: 620px;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .dm-card h2 {
-            text-align: center;
-            color: #102a6b;
-            margin-bottom: 10px;
-        }
-
-        .dm-card h3 {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #555;
-            font-size: 15px;
-        }
-
-        .info {
-            text-align: center;
-            font-size: 14px;
-            color: #555;
-            margin-top: 20px;
-        }
-
-        .dm-box {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            background: #f8f9fc;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            padding: 8px 10px;
-            background: white;
-            border-radius: 6px;
-            position: relative;
-        }
-
-        .message b {
-            color: #102a6b;
-        }
-
-        .message small {
-            color: #666;
-            font-size: 11px;
-            margin-left: 6px;
-        }
-
-        .delete-form {
-            display: inline;
-            float: right;
-        }
-
-        .delete-form button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            color: #c62828;
-        }
-
-        .dm-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .dm-form input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .dm-form input:focus {
-            outline: none;
-            border-color: #102a6b;
-        }
-
-        .dm-form button {
-            padding: 12px 18px;
-            background: #102a6b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .dm-form button:hover {
-            background: #081c47;
-        }
-
-        .back-link {
-            text-align: center;
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        .back-link a {
-            color: #c62828;
-            text-decoration: none;
-        }
-
-        .back-link a:hover {
-            text-decoration: underline;
-        }
+        :root{--bg:#0f1724;--card:#0b1220;--accent:#5865F2;--muted:#93a2b8}
+        body { margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8 }
+        .chat-container{display:flex;height:100vh;gap:0}
+        .sidebar{width:280px;background:linear-gradient(180deg,rgba(0,0,0,0.3),transparent);border-right:1px solid rgba(255,255,255,0.03);padding:14px;overflow-y:auto}
+        .chat-main{flex:1;display:flex;flex-direction:column;padding:18px}
+        .chat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+        .chat-header h3{color:var(--accent);margin:0}
+        .btn-back{padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);border-radius:8px;color:#e6eef8;text-decoration:none;font-size:13px;cursor:pointer}
+        .btn-back:hover{background:rgba(88,101,242,0.08)}
+        .chat-box{flex:1;overflow-y:auto;background:linear-gradient(180deg,#071022,#0b1224);padding:16px;border-radius:10px;margin-bottom:14px}
+        .message{margin-bottom:12px;padding:10px 14px;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:10px;animation:slideIn .2s ease}
+        .message b{color:var(--accent);font-weight:700}
+        .timestamp{color:var(--muted);font-size:11px;margin-left:8px}
+        .delete-btn{background:none;border:none;color:#ff9a9a;cursor:pointer;font-size:16px;margin-left:8px}
+        .chat-form{display:flex;gap:8px}
+        input{flex:1;padding:10px;background:#071022;border:1px solid rgba(255,255,255,0.03);border-radius:8px;color:#e6eef8}
+        button{padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all .12s ease}
+        button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(88,101,242,0.2)}
+        .info-box{padding:12px;background:rgba(88,101,242,0.1);border-radius:8px;color:var(--muted);font-size:13px;margin-bottom:14px}
+        .dm-item{padding:8px;margin-bottom:6px;border-radius:6px;cursor:pointer;background:transparent;border:1px solid rgba(255,255,255,0.02)}
+        .dm-item:hover{background:rgba(88,101,242,0.1)}
+        .dm-item a{color:#e6eef8;text-decoration:none;display:block}
+        .sidebar-title{color:var(--accent);font-weight:700;margin-bottom:12px;font-size:14px}
+        @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     </style>
 </head>
 
 <body>
-
-    <div class="dm-card">
-
-        <h2>Direct Message</h2>
-
-        {% if not target %}
-            <div class="info">
-                Select a user from <b>Search Users</b> to start chatting.
-            </div>
-        {% else %}
-            <h3>Chat with {{ target }}</h3>
-
-            <div class="dm-box">
-                {% for m in messages %}
-                    <div class="message">
-                        <b>{{ m[1] }}</b>: {{ m[2] }}
-                        <small>({{ m[3] }})</small>
-
-                        {% if session.role == "admin" %}
-                            <form method="POST"
-                                  action="/delete_message/{{ m[0] }}"
-                                  class="delete-form">
-                                <button type="submit" title="Delete">🗑️</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-
-            <form method="POST" class="dm-form">
-                <input type="text" name="message" placeholder="Type message" required>
-                <button type="submit">Send</button>
-            </form>
-        {% endif %}
-
-        <div class="back-link">
-            <a href="/home">← Back</a>
+    <div class="chat-container">
+        <div class="sidebar">
+            <div class="sidebar-title">Direct Messages</div>
+            <div id="dmList"></div>
+            <a href="/search" class="btn-back" style="display:block;margin-top:14px">+ Search users</a>
         </div>
+        <div class="chat-main">
+            {% if not target %}
+                <div class="info-box">Select a user from the DM list or search to start chatting.</div>
+            {% else %}
+                <div class="chat-header">
+                    <h3>{{ target }}</h3>
+                    <a href="/home" class="btn-back">← Home</a>
+                </div>
 
+                {% set users = [session['user'], target] | sort %}
+                {% set room = users[0] ~ '|' ~ users[1] %}
+
+                <div id="chatBox" class="chat-box">
+                    {% for m in messages %}
+                        <div class="message" id="msg-{{ m.id }}">
+                            <b>{{ m.sender }}</b>: <span class="body">{{ m.message }}</span>
+                            <span class="timestamp">({{ m.timestamp }})</span>
+                            {% if session.role == "admin" %}
+                                <button class="delete-btn" data-id="{{ m.id }}" title="Delete">✕</button>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <form id="sendForm" class="chat-form">
+                    <input id="messageInput" type="text" placeholder="Send a message..." required>
+                    <button type="submit">Send</button>
+                </form>
+            {% endif %}
+        </div>
     </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
+
+        // Load DM list
+        fetch('/api/dms')
+            .then(r => r.json())
+            .then(data => {
+                const dmList = document.getElementById('dmList');
+                if (data.users && data.users.length) {
+                    dmList.innerHTML = data.users.map(u => 
+                        `<div class="dm-item"><a href="/dmchat?user=${u}">💬 ${u}</a></div>`
+                    ).join('');
+                }
+            })
+            .catch(e => console.error('Failed to load DMs:', e));
+
+        {% if target %}
+            const room = "{{ room }}";
+
+            socket.emit('join', {room});
+
+            socket.on('room_messages', data => {
+                const chatBox = document.getElementById('chatBox');
+                chatBox.innerHTML = '';
+                if (data.messages && data.messages.length) {
+                    data.messages.forEach(m => {
+                        const el = document.createElement('div');
+                        el.className = 'message';
+                        el.id = `msg-${m.id}`;
+                        el.innerHTML = `<b>${m.sender}</b>: <span class="body">${m.message}</span> <span class="timestamp">(${m.timestamp})</span>`;
+                        if (isAdmin) {
+                            const btn = document.createElement('button');
+                            btn.className = 'delete-btn';
+                            btn.dataset.id = m.id;
+                            btn.innerText = '✕';
+                            btn.title = 'Delete';
+                            el.appendChild(btn);
+                        }
+                        chatBox.appendChild(el);
+                    });
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+
+            socket.on('new_message', m => {
+                if (!m) return;
+                const chatBox = document.getElementById('chatBox');
+                const el = document.createElement('div');
+                el.className = 'message';
+                el.id = `msg-${m.id}`;
+                el.innerHTML = `<b>${m.sender}</b>: <span class="body">${m.message}</span> <span class="timestamp">(${m.timestamp})</span>`;
+                if (isAdmin) {
+                    const btn = document.createElement('button');
+                    btn.className = 'delete-btn';
+                    btn.dataset.id = m.id;
+                    btn.innerText = '✕';
+                    btn.title = 'Delete';
+                    el.appendChild(btn);
+                }
+                chatBox.appendChild(el);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+
+            socket.on('message_deleted', data => {
+                const el = document.getElementById('msg-' + data.id);
+                if (el) el.remove();
+            });
+
+            document.getElementById('sendForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const input = document.getElementById('messageInput');
+                const txt = input.value.trim();
+                if (!txt) return;
+                socket.emit('send_message', {room, message: txt});
+                input.value = '';
+            });
+
+            document.getElementById('chatBox').addEventListener('click', e => {
+                if (e.target && e.target.classList.contains('delete-btn')) {
+                    const id = e.target.dataset.id;
+                    socket.emit('delete_message', {id});
+                }
+            });
+        {% endif %}
+    </script>
 
 </body>
 </html>

@@ -1,78 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Account Settings</title>
-
+    <title>Account — Secure Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(90deg, #4b2c7a, #8a2f6c);
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .account-card {
-            background: white;
-            width: 420px;
-            padding: 35px 40px;
-            border-radius: 14px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-            text-align: center;
-        }
-
-        .account-card h2 {
-            margin-bottom: 25px;
-            color: #102a6b;
-        }
-
-        .info {
-            text-align: left;
-            margin-bottom: 25px;
-        }
-
-        .info p {
-            background: #f5f6fa;
-            padding: 12px 14px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .label {
-            font-weight: bold;
-            color: #102a6b;
-        }
-
-        .actions a {
-            display: block;
-            margin-bottom: 12px;
-            padding: 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .back {
-            background: #102a6b;
-            color: white;
-        }
-
-        .back:hover {
-            background: #081c47;
-        }
-
-        .logout {
-            background: #c62828;
-            color: white;
-        }
-
-        .logout:hover {
-            background: #8e1b1b;
-        }
+        :root{--bg:#0f1724;--accent:#5865F2;--muted:#93a2b8}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;display:flex;align-items:center;justify-content:center}
+        .account-card{width:420px;padding:28px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7)}
+        h2{color:var(--accent);margin-bottom:12px}
+        .info p{background:#071022;padding:12px;border-radius:8px;margin-bottom:12px;color:#dbe9ff}
+        .label{color:#9fb3ff}
+        .actions a{display:block;margin-bottom:10px;padding:10px;border-radius:8px;text-decoration:none;color:#e6eef8;background:rgba(255,255,255,0.02)}
+        .actions a:hover{background:rgba(255,255,255,0.03)}
     </style>
 </head>
 
@@ -87,8 +26,8 @@
         </div>
 
         <div class="actions">
-            <a href="/home" class="back">← Back</a>
-            <a href="/logout" class="logout">Logout</a>
+            <a href="/home">← Back</a>
+            <a href="/logout" style="color:#ff9a9a">Logout</a>
         </div>
     </div>
 
