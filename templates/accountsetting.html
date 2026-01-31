@@ -37,9 +37,31 @@
                 <p><span class="label">Username:</span> {{ session['user'] }}</p>
                 <p><span class="label">Role:</span> {{ session['role'] }}</p>
             </div>
-
             <div class="divider"></div>
             
+            <h3>Change Password</h3>
+            {% if session.pop('password_changed', False) %}
+            <p style="color:#90ee90;font-size:13px;background:rgba(144,238,144,0.1);padding:12px;border-radius:8px;margin-bottom:16px">✓ Password changed successfully!</p>
+            {% endif %}
+            <form method="POST" action="/change_password">
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" name="confirm_password" required>
+                </div>
+                <button type="submit">Update Password</button>
+            </form>
+            
+            <div class="divider"></div>
+            
+            {% if session.role != "admin" %}
             <h3>Change Username</h3>
             <form method="POST" action="/change_username">
                 <div class="form-group">
@@ -69,6 +91,9 @@
                 <button type="submit" class="btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">Delete My Account</button>
                 <p class="warning">⚠️ This will permanently delete your account and all associated messages.</p>
             </form>
+            {% else %}
+            <p style="color:var(--accent);font-size:13px;background:rgba(88,101,242,0.1);padding:12px;border-radius:8px">🔒 Admin accounts cannot change username or delete account for security reasons.</p>
+            {% endif %}
             
             <div class="divider"></div>
             

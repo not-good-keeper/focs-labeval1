@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error — Secure Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0f1724;--accent:#5865F2;--muted:#93a2b8}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:20px}
+        .error-card{max-width:500px;padding:40px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7);text-align:center}
+        .error-icon{font-size:60px;margin-bottom:20px}
+        h1{color:#ff6b6b;margin:0 0 12px 0;font-size:24px}
+        .error-msg{color:var(--muted);margin-bottom:28px;line-height:1.6;font-size:15px}
+        .actions{display:flex;gap:12px;margin-top:24px;justify-content:center;flex-wrap:wrap}
+        a, button{padding:12px 24px;border-radius:8px;font-weight:600;text-decoration:none;cursor:pointer;border:none;transition:all .12s ease;font-size:14px}
+        .btn-primary{background:var(--accent);color:white}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(88,101,242,0.3)}
+        .btn-secondary{background:rgba(255,255,255,0.05);color:#e6eef8;border:1px solid rgba(255,255,255,0.1)}
+        .btn-secondary:hover{background:rgba(255,255,255,0.1)}
+        .btn-back{background:rgba(255,255,255,0.02);color:#9fb3ff;border:1px solid rgba(255,255,255,0.05)}
+        .btn-back:hover{background:rgba(255,255,255,0.05)}
+    </style>
+</head>
+
+<body>
+    <div class="error-card">
+        <div class="error-icon">⚠️</div>
+        <h1>{{ error_title }}</h1>
+        <p class="error-msg">{{ error_message }}</p>
+        
+        <div class="actions">
+            {% if error_type == "invalid_credentials" %}
+                <a href="/login" class="btn-primary">Back to Login</a>
+                <a href="/signup" class="btn-secondary">Create Account</a>
+            {% elif error_type == "otp_expired" %}
+                <a href="/login" class="btn-primary">Login Again</a>
+            {% elif error_type == "invalid_otp" %}
+                <a href="/otp" class="btn-secondary">Try Again</a>
+                <a href="/otp/resend" onclick="fetch('/otp/resend', {method:'POST'}).catch(e => alert('Error')); return false;" class="btn-back">Resend OTP</a>
+            {% elif error_type == "account_error" %}
+                <a href="/account" class="btn-secondary">Back to Settings</a>
+                <a href="/home" class="btn-primary">Go Home</a>
+            {% else %}
+                <a href="/" class="btn-primary">Back to Home</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>
