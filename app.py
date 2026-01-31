@@ -91,6 +91,12 @@ def verify_hmac(message, signature):
 def get_db():
     conn = sqlite3.connect("database.db", check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # Security: Enable foreign keys and set strict mode
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")  # Write-ahead logging for consistency
+    conn.execute("PRAGMA query_only = OFF")  # Allow writes
+    # Disable dangerous SQL functions
+    conn.execute("PRAGMA trusted_schema = OFF")
     return conn
 
 
@@ -132,12 +138,42 @@ def fetch_messages(room):
 def index():
     return render_template("login.html")
 
+# ---- INPUT VALIDATION ----
+def validate_username(username):
+    """Validate username format and length"""
+    if not username or not isinstance(username, str):
+        return False, "Invalid username"
+    username = username.strip()
+    if len(username) < 3 or len(username) > 50:
+        return False, "Username must be 3-50 characters"
+    if not username.isalnum():
+        return False, "Username must be alphanumeric"
+    return True, username
+
+def validate_password(password):
+    """Validate password strength"""
+    if not password or len(password) < 6:
+        return False, "Password must be at least 6 characters"
+    if len(password) > 200:
+        return False, "Password too long"
+    return True, password
+
 # ---------------- SIGNUP ----------------
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        raw_username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        
+        # Validate inputs
+        valid, msg = validate_username(raw_username)
+        if not valid:
+            return msg
+        username = msg
+        
+        valid, msg = validate_password(password)
+        if not valid:
+            return msg
 
         salt = secrets.token_hex(16)
         password_hash = hash_password(password, salt)
@@ -151,8 +187,10 @@ def signup():
             )
             conn.commit()
             conn.close()
-        except:
+        except sqlite3.IntegrityError:
             return "Username already exists"
+        except Exception as e:
+            return f"Error: {str(e)}"
 
         return redirect("/")
 
@@ -161,8 +199,8 @@ def signup():
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["POST"])
 def login():
-    username = request.form["username"]
-    password = request.form["password"]
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
 
     conn = get_db()
     cur = conn.cursor()
@@ -317,6 +355,116 @@ def account():
     if "user" not in session or not session.get("mfa"):
         return redirect("/")
     return render_template("accountsetting.html")
+
+# ---- CHANGE USERNAME ----
+@app.route("/change_username", methods=["POST"])
+def change_username():
+    if "user" not in session or not session.get("mfa"):
+        return redirect("/")
+    
+    new_username = request.form.get("new_username", "").strip()
+    password = request.form.get("password", "")
+    
+    # Validate input
+    if not new_username or len(new_username) < 3:
+        return "Username must be at least 3 characters"
+    if not password:
+        return "Password required"
+    if len(new_username) > 50:
+        return "Username too long"
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    try:
+        # Get current user's salt and hash
+        cur.execute("SELECT password_hash, salt FROM users WHERE username=?", (session["user"],))
+        row = cur.fetchone()
+        
+        if not row:
+            conn.close()
+            return "User not found"
+        
+        stored_hash, salt = row[0], row[1]
+        
+        # Verify password
+        if not verify_password(password, stored_hash, salt):
+            conn.close()
+            return "Incorrect password"
+        
+        # Check if new username already exists
+        cur.execute("SELECT username FROM users WHERE username=?", (new_username,))
+        if cur.fetchone():
+            conn.close()
+            return "Username already taken"
+        
+        # Update username
+        cur.execute("UPDATE users SET username=? WHERE username=?", (new_username, session["user"]))
+        conn.commit()
+        conn.close()
+        
+        # Update session
+        session["user"] = new_username
+        return redirect("/account")
+    except Exception as e:
+        conn.close()
+        return f"Error: {str(e)}"
+
+# ---- DELETE ACCOUNT ----
+@app.route("/delete_account", methods=["POST"])
+def delete_account():
+    if "user" not in session or not session.get("mfa"):
+        return redirect("/")
+    
+    password = request.form.get("password", "")
+    confirm_username = request.form.get("confirm_username", "").strip()
+    
+    current_user = session["user"]
+    
+    if not password or not confirm_username:
+        return "Password and username confirmation required"
+    
+    if confirm_username != current_user:
+        return "Username confirmation doesn't match"
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    try:
+        # Get user's password hash to verify
+        cur.execute("SELECT password_hash, salt FROM users WHERE username=?", (current_user,))
+        row = cur.fetchone()
+        
+        if not row:
+            conn.close()
+            return "User not found"
+        
+        stored_hash, salt = row[0], row[1]
+        
+        # Verify password before deletion
+        if not verify_password(password, stored_hash, salt):
+            conn.close()
+            return "Incorrect password"
+        
+        # Delete all messages from this user
+        cur.execute("DELETE FROM messages WHERE sender=?", (current_user,))
+        
+        # Delete all messages in DMs involving this user
+        cur.execute("DELETE FROM messages WHERE room LIKE ? OR room LIKE ?", 
+                   (f"{current_user}|%", f"%|{current_user}"))
+        
+        # Delete the user account
+        cur.execute("DELETE FROM users WHERE username=?", (current_user,))
+        
+        conn.commit()
+        conn.close()
+        
+        # Clear session and redirect
+        session.clear()
+        return redirect("/")
+    except Exception as e:
+        conn.close()
+        return f"Error: {str(e)}"
 
 # ---------------- LOGOUT ----------------
 @app.route("/logout")

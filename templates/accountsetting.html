@@ -5,31 +5,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root{--bg:#0f1724;--accent:#5865F2;--muted:#93a2b8}
-        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;display:flex;align-items:center;justify-content:center}
-        .account-card{width:420px;padding:28px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7)}
-        h2{color:var(--accent);margin-bottom:12px}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8;padding:20px}
+        .container{max-width:600px;margin:0 auto}
+        .account-card{padding:28px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 12px 40px rgba(2,6,23,0.7);margin-bottom:20px}
+        h2{color:var(--accent);margin-bottom:20px;margin-top:0}
+        h3{color:var(--accent);margin-top:20px;margin-bottom:12px;font-size:16px}
         .info p{background:#071022;padding:12px;border-radius:8px;margin-bottom:12px;color:#dbe9ff}
         .label{color:#9fb3ff}
-        .actions a{display:block;margin-bottom:10px;padding:10px;border-radius:8px;text-decoration:none;color:#e6eef8;background:rgba(255,255,255,0.02)}
+        .form-group{margin-bottom:16px}
+        label{display:block;margin-bottom:6px;color:#9fb3ff;font-weight:600;font-size:13px}
+        input[type="text"],input[type="password"]{width:100%;padding:10px;background:#071022;border:1px solid rgba(255,255,255,0.03);border-radius:8px;color:#e6eef8;font-family:inherit;box-sizing:border-box}
+        input:focus{outline:none;border-color:var(--accent)}
+        button{padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all .12s ease;margin-right:8px}
+        button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(88,101,242,0.2)}
+        .btn-danger{background:#ff6b6b}
+        .btn-danger:hover{background:#ff5252}
+        .actions{margin-top:20px}
+        .actions a{display:inline-block;margin-right:10px;padding:10px 16px;border-radius:8px;text-decoration:none;color:#e6eef8;background:rgba(255,255,255,0.02);font-size:13px}
         .actions a:hover{background:rgba(255,255,255,0.03)}
+        .divider{height:1px;background:rgba(255,255,255,0.05);margin:20px 0}
+        .warning{color:#ff9a9a;font-size:12px;margin-top:8px}
     </style>
 </head>
 
 <body>
+    <div class="container">
+        <div class="account-card">
+            <h2>Account Settings</h2>
+            
+            <div class="info">
+                <p><span class="label">Username:</span> {{ session['user'] }}</p>
+                <p><span class="label">Role:</span> {{ session['role'] }}</p>
+            </div>
 
-    <div class="account-card">
-        <h2>Account Settings</h2>
-
-        <div class="info">
-            <p><span class="label">Username:</span> {{ session['user'] }}</p>
-            <p><span class="label">Role:</span> {{ session['role'] }}</p>
-        </div>
-
-        <div class="actions">
-            <a href="/home">← Back</a>
-            <a href="/logout" style="color:#ff9a9a">Logout</a>
+            <div class="divider"></div>
+            
+            <h3>Change Username</h3>
+            <form method="POST" action="/change_username">
+                <div class="form-group">
+                    <label>New Username</label>
+                    <input type="text" name="new_username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password (to verify)</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit">Update Username</button>
+            </form>
+            
+            <div class="divider"></div>
+            
+            <h3>Delete Account</h3>
+            <p style="color:var(--muted);font-size:13px">This action is <strong>permanent</strong> and cannot be undone. All your messages and account data will be deleted.</p>
+            <form method="POST" action="/delete_account">
+                <div class="form-group">
+                    <label>Password (required to delete)</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Type your username to confirm: <strong>{{ session['user'] }}</strong></label>
+                    <input type="text" name="confirm_username" placeholder="Enter your username" required>
+                </div>
+                <button type="submit" class="btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">Delete My Account</button>
+                <p class="warning">⚠️ This will permanently delete your account and all associated messages.</p>
+            </form>
+            
+            <div class="divider"></div>
+            
+            <div class="actions">
+                <a href="/home">← Back</a>
+                <a href="/logout">Logout</a>
+            </div>
         </div>
     </div>
-
 </body>
 </html>
