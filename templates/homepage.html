@@ -25,6 +25,9 @@
             <div class="title">Secure Chat</div>
             <a class="btn-menu" href="/groupchat"># group-chat</a>
             <a class="btn-menu" href="/search">🔎 Search users</a>
+            {% if session.role == "owner" %}
+                <a class="btn-menu" href="/userlist">👥 User List</a>
+            {% endif %}
             <a class="btn-menu" href="/account">⚙️ Account</a>
             <a class="btn-menu" href="/logout" style="margin-top:14px;color:#ff8b8b">Logout</a>
         </div>

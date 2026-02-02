@@ -19,8 +19,9 @@ socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
 
 # ---------------- ACCESS CONTROL LIST ----------------
 ACL = {
-    "admin": ["read", "send", "delete"],
-    "user": ["read", "send"]
+    "admin": ["read", "send", "delete", "view_userlist"],
+    "user": ["read", "send"],
+    "owner": ["read", "send", "delete", "view_userlist"]
 }
 
 def check_access(action):
@@ -375,9 +376,9 @@ def change_username():
     if "user" not in session or not session.get("mfa"):
         return redirect("/")
     
-    # Admin cannot change username
+    # Admin cannot change username (protected account)
     if session.get("role") == "admin":
-        return render_template("error.html", error_title="Access Denied", error_message="Admin accounts cannot be modified for security reasons.", error_type="account_error")
+        return render_template("error.html", error_title="Access Denied", error_message="Admin account cannot be modified for security reasons.", error_type="account_error")
     
     new_username = request.form.get("new_username", "").strip()
     password = request.form.get("password", "")
@@ -458,9 +459,9 @@ def delete_account():
     if "user" not in session or not session.get("mfa"):
         return redirect("/")
     
-    # Admin cannot delete account
-    if session.get("role") == "admin":
-        return render_template("error.html", error_title="Access Denied", error_message="Admin accounts cannot be deleted for security reasons.", error_type="account_error")
+    # Both Admin and Owner cannot delete their OWN accounts (protected account)
+    if session.get("role") in ["admin", "owner"]:
+        return render_template("error.html", error_title="Access Denied", error_message="Your account cannot be deleted for security reasons.", error_type="account_error")
     
     password = request.form.get("password", "")
     confirm_username = request.form.get("confirm_username", "").strip()
@@ -518,6 +519,62 @@ def delete_account():
             pass
         print(f"[DEBUG] Exception in delete_account for {session['user']}: {str(e)}")
         return render_template("error.html", error_title="Error", error_message="Failed to delete account. Please try again.", error_type="account_error")
+
+# ---- DELETE OTHER USER (owner only) ----
+@app.route("/delete_user/<username>", methods=["POST"])
+def delete_user(username):
+    if "user" not in session or not session.get("mfa"):
+        return redirect("/")
+    
+    # Only owner can delete other users
+    if session.get("role") != "owner":
+        return render_template("error.html", error_title="Access Denied", error_message="Only owner can delete user accounts.", error_type="unauthorized")
+    
+    current_user = session["user"]
+    username = username.strip()
+    
+    # Owner cannot delete themselves
+    if username == current_user:
+        return render_template("error.html", error_title="Cannot Delete Self", error_message="You cannot delete your own account. Contact admin if needed.", error_type="account_error")
+    
+    # Owner cannot delete admin account
+    if username == "admin":
+        return render_template("error.html", error_title="Cannot Delete Admin", error_message="Admin account is protected and cannot be deleted.", error_type="account_error")
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    try:
+        # Verify user exists
+        cur.execute("SELECT username FROM users WHERE username=?", (username,))
+        if not cur.fetchone():
+            conn.close()
+            return render_template("error.html", error_title="User Not Found", error_message=f"User '{username}' does not exist.", error_type="account_error")
+        
+        # Delete all user data in transaction
+        # 1. Delete all messages sent by this user
+        cur.execute("DELETE FROM messages WHERE sender=?", (username,))
+        
+        # 2. Delete all messages in DM rooms involving this user
+        cur.execute("DELETE FROM messages WHERE room LIKE ? OR room LIKE ?", 
+                   (f"{username}|%", f"%|{username}"))
+        
+        # 3. Delete the user account
+        cur.execute("DELETE FROM users WHERE username=?", (username,))
+        
+        # Commit all deletions
+        conn.commit()
+        conn.close()
+        
+        return render_template("error.html", error_title="User Deleted", error_message=f"User '{username}' and all their data have been deleted.", error_type="success")
+    except Exception as e:
+        try:
+            conn.rollback()
+            conn.close()
+        except:
+            pass
+        print(f"[DEBUG] Exception in delete_user for {username}: {str(e)}")
+        return render_template("error.html", error_title="Error", error_message="Failed to delete user. Please try again.", error_type="account_error")
 
 # ---------------- CHANGE PASSWORD ----------------
 @app.route("/change_password", methods=["POST"])
@@ -669,7 +726,23 @@ def handle_delete_message(data):
     conn.close()
 
     emit("message_deleted", {"id": msg_id}, broadcast=True)
-
+# ---- VIEW USER LIST (owner only) ----
+@app.route("/userlist")
+def userlist():
+    if "user" not in session or not session.get("mfa"):
+        return redirect("/")
+    
+    if not check_access("view_userlist"):
+        return render_template("error.html", error_title="Access Denied", error_message="You do not have permission to view the user list.", error_type="unauthorized")
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT username, role FROM users ORDER BY username")
+    users = cur.fetchall()
+    conn.close()
+    
+    users_data = [{"username": row["username"], "role": row["role"]} for row in users]
+    return render_template("userlist.html", users=users_data)
 
 # ---- DATABASE CONSISTENCY CHECK (admin debug) ----
 @app.route("/api/debug/consistency", methods=["GET"])

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User List — Secure Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0f1724;--panel:#0b1220;--accent:#5865F2;--muted:#93a2b8}
+        body{margin:0;min-height:100vh;background:linear-gradient(135deg,var(--bg),#071028);font-family:Inter,system-ui,Arial;color:#e6eef8}
+        .container{max-width:800px;margin:40px auto;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:24px;box-shadow:0 12px 40px rgba(2,6,23,0.7)}
+        h2{color:var(--accent);margin-top:0}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .btn-back{padding:8px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);border-radius:8px;color:#e6eef8;text-decoration:none;font-size:13px;cursor:pointer;transition:background .12s ease}
+        .btn-back:hover{background:rgba(88,101,242,0.08)}
+        .table{width:100%;border-collapse:collapse;margin-top:16px}
+        .table th{background:rgba(88,101,242,0.1);padding:12px;text-align:left;border:1px solid rgba(255,255,255,0.03);color:var(--accent);font-weight:700;font-size:13px}
+        .table td{padding:12px;border:1px solid rgba(255,255,255,0.03);font-size:14px}
+        .table tr:hover{background:rgba(88,101,242,0.05)}
+        .role-admin{background:rgba(255,107,107,0.1);color:#ff8b8b;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+        .role-owner{background:rgba(255,193,7,0.1);color:#ffc107;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+        .role-user{background:rgba(88,101,242,0.1);color:var(--accent);padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+        .stat-card{background:rgba(88,101,242,0.05);border:1px solid rgba(88,101,242,0.1);border-radius:8px;padding:12px;text-align:center}
+        .stat-value{color:var(--accent);font-size:20px;font-weight:700}
+        .stat-label{color:var(--muted);font-size:12px;margin-top:4px}
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>👥 User Management</h2>
+            <a href="/home" class="btn-back">← Back to home</a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ users|length }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="adminCount">0</div>
+                <div class="stat-label">Admins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="ownerCount">0</div>
+                <div class="stat-label">Owners</div>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td><strong>{{ user.username }}</strong></td>
+                        <td>
+                            {% if user.role == "admin" %}
+                                <span class="role-admin">🔐 Admin</span>
+                            {% elif user.role == "owner" %}
+                                <span class="role-owner">⭐ Owner</span>
+                            {% else %}
+                                <span class="role-user">👤 User</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Calculate role statistics
+        const users = {{ users|tojson }};
+        const adminCount = users.filter(u => u.role === "admin").length;
+        const ownerCount = users.filter(u => u.role === "owner").length;
+        
+        document.getElementById("adminCount").textContent = adminCount;
+        document.getElementById("ownerCount").textContent = ownerCount;
+    </script>
+</body>
+</html>
