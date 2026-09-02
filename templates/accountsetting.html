@@ -44,6 +44,7 @@
             <p style="color:#90ee90;font-size:13px;background:rgba(144,238,144,0.1);padding:12px;border-radius:8px;margin-bottom:16px">✓ Password changed successfully!</p>
             {% endif %}
             <form method="POST" action="/change_password">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label>Current Password</label>
                     <input type="password" name="current_password" required>
@@ -64,6 +65,7 @@
             {% if session.role != "admin" %}
             <h3>Change Username</h3>
             <form method="POST" action="/change_username">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label>New Username</label>
                     <input type="text" name="new_username" required>
@@ -80,6 +82,7 @@
             <h3>Delete Account</h3>
             <p style="color:var(--muted);font-size:13px">This action is <strong>permanent</strong> and cannot be undone. All your messages and account data will be deleted.</p>
             <form method="POST" action="/delete_account">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label>Password (required to delete)</label>
                     <input type="password" name="password" required>

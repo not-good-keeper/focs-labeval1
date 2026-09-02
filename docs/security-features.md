@@ -28,6 +28,18 @@
   - Rate-limited resend (20-second minimum)
   - Console-printed for demo (enterprise: use SMS/email)
 
+## Cross-Site Request Forgery
+- ✅ **Per-Session CSRF Token**: Generated on first render, stored in the session
+  - Required on every POST/PUT/PATCH/DELETE request
+  - Submitted as a hidden form field, or as an `X-CSRF-Token` header for AJAX calls
+  - Compared with `hmac.compare_digest` (constant-time)
+
+## Real-Time (Socket.IO) Access Control
+- ✅ **Authenticated Joins**: `join` requires a session with `mfa` set, so an
+  unauthenticated client cannot subscribe to a room and receive its history
+- ✅ **DM Room Membership**: rooms named `<userA>|<userB>` are restricted to
+  those two accounts on both `join` and `send_message`
+
 ## Session Security
 - ✅ **Session Verification**: All routes verify `session["mfa"]` flag
 - ✅ **Session Isolation**: Each user isolated to their own account

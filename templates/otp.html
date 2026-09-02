@@ -25,6 +25,7 @@
         <p class="hint">Enter the 6-digit code sent to your device. This demo prints the code server-side.</p>
 
         <form id="otpForm" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input name="otp" id="otpInput" class="otp-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <small id="countdown" class="hint">00:60</small>
@@ -56,7 +57,7 @@
 
         resendBtn.addEventListener('click', async ()=>{
             resendBtn.disabled = true;
-            const r = await fetch('/otp/resend',{method:'POST'});
+            const r = await fetch('/otp/resend',{method:'POST',headers:{'X-CSRF-Token':'{{ csrf_token() }}'}});
             if(!r.ok){
                 const j = await r.json().catch(()=>({error:'failed'}));
                 alert(j.error || 'Cannot resend now');

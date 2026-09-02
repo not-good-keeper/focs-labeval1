@@ -35,7 +35,7 @@
                 <a href="/login" class="btn-primary">Login Again</a>
             {% elif error_type == "invalid_otp" %}
                 <a href="/otp" class="btn-secondary">Try Again</a>
-                <a href="/otp/resend" onclick="fetch('/otp/resend', {method:'POST'}).catch(e => alert('Error')); return false;" class="btn-back">Resend OTP</a>
+                <a href="/otp/resend" onclick="fetch('/otp/resend', {method:'POST',headers:{'X-CSRF-Token':'{{ csrf_token() }}'}}).catch(e => alert('Error')); return false;" class="btn-back">Resend OTP</a>
             {% elif error_type == "account_error" %}
                 <a href="/account" class="btn-secondary">Back to Settings</a>
                 <a href="/home" class="btn-primary">Go Home</a>

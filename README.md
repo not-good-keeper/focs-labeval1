@@ -26,6 +26,8 @@ as `[Integrity check failed]` instead of being silently trusted.
 | Message confidentiality | Fernet (AES-128-CBC + HMAC), key held outside the codebase |
 | Message integrity | HMAC-SHA256 tag per message, verified on read |
 | Authorization | ACL mapping roles (`user` / `admin` / `owner`) to actions |
+| CSRF defence | Per-session token required on every state-changing request, compared in constant time |
+| Realtime access control | Socket.IO `join`/`send_message` require an MFA session; DM rooms are restricted to their two participants |
 | Injection defence | Parameterized SQL throughout; username and password format validation |
 | SQLite hardening | `foreign_keys=ON`, `journal_mode=WAL`, `trusted_schema=OFF` |
 
@@ -67,8 +69,20 @@ createadmindb.py        Seeds default admin / owner accounts
 createmessageroomdb.py  Legacy migration: adds the signature column to older DBs
 upgrade_admin.py        Promotes an existing account to admin
 templates/              Jinja2 templates (login, OTP, chat, account, admin views)
+test_security.py        End-to-end checks for CSRF, socket access control, crypto
 docs/                   Security write-up, rubric mapping, problem statement
 ```
+
+## Tests
+
+```bash
+python test_security.py
+```
+
+Twenty end-to-end checks covering the CSRF layer, the Socket.IO authentication
+and DM-membership rules, and the encrypt/HMAC round trip (including that the
+stored row really is ciphertext). It runs against the local `database.db` and
+recreates its own test users, so point it at a throwaway database.
 
 ## Known limitations
 
@@ -81,4 +95,6 @@ This is a coursework project, and a few things are deliberately simplified:
   variable is unset.
 - Password verification still accepts the legacy SHA-256 format for accounts
   created before the PBKDF2 migration.
-- There is no automated test suite.
+- Socket.IO runs with `cors_allowed_origins="*"`, which is convenient for local
+  development but too permissive for a deployment.
+- Login has no brute-force rate limiting.

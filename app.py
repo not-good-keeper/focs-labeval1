@@ -17,6 +17,45 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "lab-secret-key")
 # Socket.IO (real-time)
 socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
 
+# ---------------- CSRF PROTECTION ----------------
+# Every state-changing request must carry the per-session token, so a form on
+# another site cannot make the browser perform actions with the user's cookie.
+CSRF_HEADER = "X-CSRF-Token"
+
+
+def get_csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+@app.context_processor
+def inject_csrf_token():
+    # Makes csrf_token() callable inside every Jinja template.
+    return {"csrf_token": get_csrf_token}
+
+
+@app.before_request
+def csrf_protect():
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return
+
+    expected = session.get("csrf_token")
+    submitted = request.form.get("csrf_token") or request.headers.get(CSRF_HEADER)
+
+    if not expected or not submitted or not hmac.compare_digest(submitted, expected):
+        if request.path.startswith("/api") or request.path == "/otp/resend":
+            return {"error": "Invalid or missing CSRF token"}, 400
+        return render_template(
+            "error.html",
+            error_title="Request Blocked",
+            error_message="Your session token was missing or expired. Please go back and try again.",
+            error_type="account_error",
+        ), 400
+
+
 # ---------------- ACCESS CONTROL LIST ----------------
 ACL = {
     "admin": ["read", "send", "delete", "view_userlist"],
@@ -27,6 +66,18 @@ ACL = {
 def check_access(action):
     role = session.get("role")
     return role and action in ACL.get(role, [])
+
+
+def can_access_room(room):
+    """A DM room is named "<userA>|<userB>"; only those two may read or write it.
+
+    Group rooms (no "|") are open to any authenticated user.
+    """
+    if not room:
+        return False
+    if "|" not in room:
+        return True
+    return session.get("user") in room.split("|")
 
 # ---------------- PASSWORD HASHING ----------------
 def hash_password(password, salt, iterations=260000):
@@ -669,9 +720,24 @@ def delete_message(msg_id):
 # ---------------- Socket.IO events ----------------
 @socketio.on("join")
 def handle_join(data):
+    # Without these checks any client could join a room and receive its
+    # decrypted history, bypassing login entirely.
+    if "user" not in session or not session.get("mfa"):
+        emit("error", {"error": "Not authenticated"})
+        return
+
+    if not check_access("read"):
+        emit("error", {"error": "Access Denied"})
+        return
+
     room = data.get("room")
     if not room:
         return
+
+    if not can_access_room(room):
+        emit("error", {"error": "Access Denied"})
+        return
+
     join_room(room)
     # send existing messages
     msgs = fetch_messages(room)
@@ -691,6 +757,10 @@ def handle_send_message(data):
     room = data.get("room")
     plain = data.get("message", "").strip()
     if not room or not plain:
+        return
+
+    if not can_access_room(room):
+        emit("error", {"error": "Access Denied"})
         return
 
     encrypted = encrypt_message(plain)

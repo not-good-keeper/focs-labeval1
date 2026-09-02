@@ -26,6 +26,7 @@
         <div class="sub">Sign in to continue to the secure chat room</div>
 
         <form method="POST" action="/login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="username" placeholder="Username" required>
             <input type="password" name="password" placeholder="Password" required>
 
