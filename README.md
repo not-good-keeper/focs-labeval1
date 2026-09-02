@@ -69,7 +69,7 @@ createadmindb.py        Seeds default admin / owner accounts
 createmessageroomdb.py  Legacy migration: adds the signature column to older DBs
 upgrade_admin.py        Promotes an existing account to admin
 templates/              Jinja2 templates (login, OTP, chat, account, admin views)
-test_security.py        End-to-end checks for CSRF, socket access control, crypto
+test_security.py        18 end-to-end checks: CSRF, socket access control, crypto
 docs/                   Security write-up, rubric mapping, problem statement
 ```
 
@@ -79,7 +79,7 @@ docs/                   Security write-up, rubric mapping, problem statement
 python test_security.py
 ```
 
-Twenty end-to-end checks covering the CSRF layer, the Socket.IO authentication
+Eighteen end-to-end checks covering the CSRF layer, the Socket.IO authentication
 and DM-membership rules, and the encrypt/HMAC round trip (including that the
 stored row really is ciphertext). It runs against the local `database.db` and
 recreates its own test users, so point it at a throwaway database.
